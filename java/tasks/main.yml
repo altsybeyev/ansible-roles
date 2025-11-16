@@ -1,0 +1,60 @@
+---
+- name: Update apt cache
+  apt:
+    update_cache: yes
+    cache_valid_time: 3600
+
+- name: Install required packages for Java installation
+  apt:
+    name:
+      - wget
+      - curl
+      - gnupg
+      - software-properties-common
+    state: present
+
+- name: Add Adoptium PPA repository key
+  apt_key:
+    url: https://packages.adoptium.net/artifactory/api/gpg/key/public
+    state: present
+  when: ansible_os_family == "Debian"
+
+- name: Add Adoptium PPA repository
+  apt_repository:
+    repo: "deb https://packages.adoptium.net/artifactory/deb {{ ansible_distribution_release }} main"
+    state: present
+    update_cache: yes
+  when: ansible_os_family == "Debian"
+
+- name: Install OpenJDK 21
+  apt:
+    name:
+      - temurin-25-jdk
+    state: present
+    update_cache: yes
+
+- name: Set JAVA_HOME environment variable
+  lineinfile:
+    path: /etc/environment
+    regexp: '^JAVA_HOME='
+    line: 'JAVA_HOME=/usr/lib/jvm/temurin-25-jdk-amd64'
+    create: yes
+    state: present
+
+- name: Add Java to PATH for all users
+  template:
+    src: java.sh.j2
+    dest: /etc/profile.d/java.sh
+    owner: root
+    group: root
+    mode: '0644'
+
+- name: Verify Java installation
+  command: java -version
+  register: java_version
+  changed_when: false
+  failed_when: java_version.rc != 0
+
+- name: Display Java version
+  debug:
+    var: java_version.stderr_lines

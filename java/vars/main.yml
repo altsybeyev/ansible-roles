@@ -1,0 +1,6 @@
+---
+# Java role variables
+java_version: "25"
+java_package: "temurin-25-jdk"
+java_home: "/usr/lib/jvm/temurin-25-jdk-amd64"
+cd 
